@@ -654,7 +654,7 @@ class CrispValueCalculator(object):
         for label, term in self.var.terms.items():
             term._cut = term.membership_value[self.sim]
             if term._cut is None:
-               continue
+                    continue
 
             # Faster to aggregate as list w/duplication
             interp = _interp_universe_fast(self.var.universe,
