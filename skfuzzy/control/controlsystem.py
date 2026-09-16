@@ -652,9 +652,10 @@ class CrispValueCalculator(object):
         new_values = []
 
         for label, term in self.var.terms.items():
-            term._cut = term.membership_value[self.sim]
-            if term._cut is None:
-                continue  # No membership defined for this adjective
+             if term.membership_value[self.sim] is None:
+                 continue
+             term._cut = term.membership_value[self.sim][idx]
+              
 
             # Faster to aggregate as list w/duplication
             interp = _interp_universe_fast(self.var.universe,
