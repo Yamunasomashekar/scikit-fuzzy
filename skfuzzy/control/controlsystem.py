@@ -621,7 +621,14 @@ class CrispValueCalculator(object):
 
             for out in it:
                 universe, mf = self.find_memberships_nd(it.multi_index)
-                out[...] = defuzz(universe, mf, self.var.defuzzify_method)
+                try:
+                    out[...] = defuzz(universe, mf,
+                                      self.var.defuzzify_method)
+                except DefuzzEmptyMembershipError:
+                    # Translate to the control-level exception so that
+                    # `lenient` simulations handle sparse rulebases the same
+                    # way they do for singleton inputs.
+                    raise EmptyMembershipError(self.var)
 
             return output
 
@@ -684,7 +691,7 @@ class CrispValueCalculator(object):
                                              new_universe)
 
             term_mfs[label] = np.minimum(term._cut, upsampled_mf)
-            np.maximum(output_mf, term_mfs[label], output_mf)
+            np.maximum(output_mf, term_mfs[label], out=output_mf)
 
         return new_universe, output_mf, term_mfs
 
@@ -730,7 +737,7 @@ class CrispValueCalculator(object):
             )
 
             term_mfs[label] = np.minimum(term._cut, upsampled_mf)
-            np.maximum(output_mf, term_mfs[label], output_mf)
+            np.maximum(output_mf, term_mfs[label], out=output_mf)
 
         return new_universe, output_mf
 
