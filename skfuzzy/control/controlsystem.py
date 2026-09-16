@@ -654,7 +654,7 @@ class CrispValueCalculator(object):
         for label, term in self.var.terms.items():
             term._cut = term.membership_value[self.sim]
             if term._cut is None:
-                continue
+                continue  # No membership defined for this adjective
 
             # Faster to aggregate as list w/duplication
             interp = _interp_universe_fast(self.var.universe,
@@ -683,7 +683,7 @@ class CrispValueCalculator(object):
 
         return new_universe, output_mf, term_mfs
 
-def find_memberships_nd(self, idx):
+    def find_memberships_nd(self, idx):
         """
         Index-aware version of find_memberships(), expecting to select a
         particular set of membership values from an array input, given input
@@ -693,6 +693,8 @@ def find_memberships_nd(self, idx):
         new_values = []
 
         for label, term in self.var.terms.items():
+            # Some consequent terms may not be used by any rule.
+            # Their membership value is None, so skip them.
             if term.membership_value[self.sim] is None:
                 continue
 
@@ -728,21 +730,6 @@ def find_memberships_nd(self, idx):
             np.maximum(output_mf, term_mfs[label], output_mf)
 
         return new_universe, output_mf
-        
-class RuleOrderGenerator(object):
-    """
-    Generator to yield rules in the correct order for calculation.
-
-    Parameters
-    ----------
-    control_system : ControlSystem
-        Fuzzy control system object, instance of `skfuzzy.ControlSystem`.
-
-    Returns
-    -------
-    out : Rule
-        Fuzzy rules in computation order.
-    """
 
     def __init__(self, control_system):
         """
