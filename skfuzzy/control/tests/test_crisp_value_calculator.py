@@ -50,3 +50,20 @@ def test_crisp_value_calculator_1():
         "average": 1,
         "good": 0,
     }
+
+def test_array_input_with_unused_consequent_terms():
+    x = Antecedent(np.linspace(0, 10, 11), "x")
+    x.automf(3)
+
+    y = Consequent(np.linspace(0, 10, 11), "y")
+    y.automf(3)
+
+    rule = Rule(x["poor"], y["good"])
+    system = ControlSystem([rule])
+    sim = ControlSystemSimulation(system)
+
+    sim.input["x"] = np.array([0, 2.5, 5])
+    sim.compute()
+
+    assert "y" in sim.output
+    assert sim.output["y"].shape == (3,)
