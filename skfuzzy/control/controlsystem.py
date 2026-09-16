@@ -712,8 +712,8 @@ class CrispValueCalculator(object):
         # Build output membership function
         term_mfs = {}
         for label, term in self.var.terms.items():
-            if term._cut is None:
-                continue  # No membership defined for this adjective
+             if term.membership_value[self.sim] is None:
+                  continue
 
             upsampled_mf = interp_membership(self.var.universe,
                                              term.mf,
