@@ -2,6 +2,7 @@
 controlsystem.py : Framework for the new fuzzy logic control system API.
 """
 from collections import OrderedDict
+from contextlib import suppress
 from warnings import warn
 
 import networkx as nx
@@ -107,12 +108,16 @@ class ControlSystem(object):
 
         # Combine the two graphs, which may not be disjoint
         self.graph = nx.compose(self.graph, rule.graph)
-        try:
+
+        # The undirected/colored graph is only used for visualization, so a
+        # failure here must not prevent the rule from being added.
+        with suppress(Exception):
             self.add_rule_n(rule)
-        except Exception:
-            pass
 
     def add_rule_n(self, rule):
+        """
+        Add a rule to the undirected graph used by ``view_n``.
+        """
         graph, color = rule.graph_n
         new_graph = nx.Graph()
         if 'graph_n' in dir(self):
@@ -654,7 +659,7 @@ class CrispValueCalculator(object):
         for label, term in self.var.terms.items():
             term._cut = term.membership_value[self.sim]
             if term._cut is None:
-                continue  # No membership defined for this adjective
+                continue
 
             # Faster to aggregate as list w/duplication
             interp = _interp_universe_fast(self.var.universe,
@@ -693,8 +698,6 @@ class CrispValueCalculator(object):
         new_values = []
 
         for label, term in self.var.terms.items():
-            # Some consequent terms may not be used by any rule.
-            # Their membership value is None, so skip them.
             if term.membership_value[self.sim] is None:
                 continue
 
@@ -731,6 +734,22 @@ class CrispValueCalculator(object):
 
         return new_universe, output_mf
 
+
+class RuleOrderGenerator(object):
+    """
+    Generator to yield rules in the correct order for calculation.
+
+    Parameters
+    ----------
+    control_system : ControlSystem
+        Fuzzy control system object, instance of `skfuzzy.ControlSystem`.
+
+    Returns
+    -------
+    out : Rule
+        Fuzzy rules in computation order.
+    """
+
     def __init__(self, control_system):
         """
         Generator to yield rules in the correct order for calculation.
@@ -752,15 +771,10 @@ class CrispValueCalculator(object):
             self._cache = list(self._process_rules(self.all_rules[:]))
             self._cached_graph = self.control_system.graph
 
-        for n, r in enumerate(self._cache):
-            yield r
-        else:
-            n = 0
+        assert len(self._cache) == len(self.all_rules), "Not all rules exposed"
 
-        if n == 0:
-            pass
-        else:
-            assert n == len(self.all_rules) - 1, "Not all rules exposed"
+        for r in self._cache:
+            yield r
 
     def _init_state(self):
         # This graph will represent what's been calculated so far. We
@@ -795,21 +809,18 @@ class CrispValueCalculator(object):
 
         if len(skipped_rules) == 0:
             # All done!
-            try:
-                return
-            except StopIteration:
-                return
-        else:
-            if len(skipped_rules) == len_rules:
-                # Avoid being caught in an infinite loop:
-                raise RuntimeError("Unable to resolve rule execution order. "
-                                   "The most likely reason is two or more "
-                                   "rules that depend on each other.\n"
-                                   "Please check the rule graph for loops.")
-            else:
-                # Recurse across the skipped rules:
-                for r in self._process_rules(skipped_rules):
-                    yield r
+            return
+
+        if len(skipped_rules) == len_rules:
+            # Avoid being caught in an infinite loop:
+            raise RuntimeError("Unable to resolve rule execution order. "
+                               "The most likely reason is two or more "
+                               "rules that depend on each other.\n"
+                               "Please check the rule graph for loops.")
+
+        # Recurse across the skipped rules:
+        for r in self._process_rules(skipped_rules):
+            yield r
 
     def _can_calc_rule(self, rule):
         # Check that we've exposed all inputs to this rule by ensuring
