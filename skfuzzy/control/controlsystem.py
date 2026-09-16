@@ -683,7 +683,7 @@ class CrispValueCalculator(object):
 
         return new_universe, output_mf, term_mfs
 
-    def find_memberships_nd(self, idx):
+        def find_memberships_nd(self, idx):
         """
         Index-aware version of find_memberships(), expecting to select a
         particular set of membership values from an array input, given input
@@ -695,6 +695,7 @@ class CrispValueCalculator(object):
         for label, term in self.var.terms.items():
             if term.membership_value[self.sim] is None:
                 continue
+
             term._cut = term.membership_value[self.sim][idx]
 
             # Faster to aggregate as list w/duplication
@@ -712,8 +713,8 @@ class CrispValueCalculator(object):
         # Build output membership function
         term_mfs = {}
         for label, term in self.var.terms.items():
-             if term.membership_value[self.sim] is None:
-                  continue
+            if term.membership_value[self.sim] is None:
+                continue
 
             upsampled_mf = interp_membership(self.var.universe,
                                              term.mf,
@@ -723,8 +724,7 @@ class CrispValueCalculator(object):
             np.maximum(output_mf, term_mfs[label], output_mf)
 
         return new_universe, output_mf
-
-
+        
 class RuleOrderGenerator(object):
     """
     Generator to yield rules in the correct order for calculation.
